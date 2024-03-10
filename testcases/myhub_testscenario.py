@@ -92,6 +92,42 @@ def test_hub():
         ("The hub should not do anything in response to a frame arriving with"
          " a destination address referring to the hub itself.")
     )
+    # test case 4: a frame with dest address of one of the interfaces should
+    # result in nothing happening
+    reqpkt = new_packet(
+        "30:00:00:00:00:02",
+        "10:00:00:00:00:01",
+        '192.168.1.100',
+        '172.16.42.2'
+    )
+    s.expect(
+        PacketInputEvent("eth0", reqpkt, display=Ethernet),
+        ("An Ethernet frame should arrive on eth0 with destination address "
+         "the same as eth0's MAC address")
+    )
+    s.expect(
+        PacketInputTimeoutEvent(1.0),
+        ("The hub should not do anything in response to a frame arriving with"
+         " a destination address referring to the hub itself.")
+    )
+    # test case 5: a frame with broadcast destination should get sent out
+    # all ports except ingress
+    testpkt = new_packet(
+        "30:00:00:00:00:03",
+        "ff:ff:ff:ff:ff:ff",
+        "176.18.46.2",
+        "255.255.255.255"
+    )
+    s.expect(
+        PacketInputEvent("eth2", testpkt, display=Ethernet),
+        ("An Ethernet frame with a broadcast destination address "
+         "should arrive on eth2")
+    )
+    s.expect(
+        PacketOutputEvent("eth0", testpkt, "eth1", testpkt, display=Ethernet),
+        ("The Ethernet frame with a broadcast destination address should be "
+         "forwarded out ports eth0 and eth1")
+    )
     return s
 
 
